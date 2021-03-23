@@ -3,7 +3,7 @@
     "GUID": "ada290",
     "Name": "Custom_Assetbundle",
     "Transform": {
-      "posX": -33.298336,
+      "posX": -36.048336,
       "posY": 2.058995,
       "posZ": -12.0941076,
       "rotX": 18.6265469,
@@ -17,9 +17,9 @@
     "Description": "",
     "GMNotes": "",
     "ColorDiffuse": {
-      "r": 0.115995355,
-      "g": 0.133586526,
-      "b": 0.1365174
+      "r": 0.115994595,
+      "g": 0.133585811,
+      "b": 0.13651669
     },
     "LayoutGroupSortIndex": 0,
     "Locked": true,

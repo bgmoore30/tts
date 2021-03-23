@@ -3,7 +3,7 @@
     "GUID": "758849",
     "Name": "Custom_Assetbundle",
     "Transform": {
-      "posX": -34.1844559,
+      "posX": -36.9344559,
       "posY": 2.05895615,
       "posZ": 12.1107807,
       "rotX": 18.6240177,
@@ -17,9 +17,9 @@
     "Description": "",
     "GMNotes": "",
     "ColorDiffuse": {
-      "r": 0.115995295,
-      "g": 0.133586466,
-      "b": 0.136517346
+      "r": 0.115994535,
+      "g": 0.133585751,
+      "b": 0.136516631
     },
     "LayoutGroupSortIndex": 0,
     "Locked": true,

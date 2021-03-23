@@ -30,5 +30,9 @@
   },
   "eslint.validate": ["javascript", "json", "typescript"],
   "eslint.lintTask.enable": true,
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "files.associations": {
+    "*.ttslua": "lua"
+  },
+  "editor.detectIndentation": false
 }

@@ -1,5 +1,6 @@
 function onLoad(save_state)
     self.interactable = false
+
     -- intialize
     setUpCards = Global.getTable("setUpCards")
     setUpData = Global.getTable("setUpData")
@@ -8,8 +9,10 @@ function onLoad(save_state)
     objectiveCartridge = getObjectFromGUID(setUpData.objectiveCartridgeGUID)
     battlefieldZone = getObjectFromGUID(Global.getVar("battlefieldZoneGUID"))
     gameData = getObjectFromGUID(Global.getVar("gameDataGUID"))
-
     battlefieldTint = gameData.getTable("battlefieldTint")
+
+    -- token stacks
+    getTokenScripts()
 
     -- buttonObjs
     optionObjs = {}
@@ -30,6 +33,25 @@ function onLoad(save_state)
     objectiveMenu()
     deploymentMenu()
     conditionsMenu()
+end
+
+function getTokenScripts()
+    local conditionTokens = getObjectFromGUID("4d25eb")
+    local objectiveTokens = getObjectFromGUID("094239")
+
+    conditionTokens.takeObject({
+      callback_function = function(token)
+        conditionTokenScript = token.getLuaScript()
+        destroyObject(token)
+      end
+    })
+    
+    objectiveTokens.takeObject({
+      callback_function = function(token)
+        objectiveTokenScript = token.getLuaScript()
+        destroyObject(token)
+      end
+    })
 end
 
 function objectiveMenu()
@@ -112,7 +134,7 @@ function spawnObjs(selection,selectedCartridgeObj)
 
     selectedCartridgeObjClone.takeObject({
         position       = {0,-10,3},
-        callback       = "spawnFromCartridgeDelay",
+        callback       = "spawnObjsFromCartridge",
         callback_owner = self,
         smooth         = false,
         guid           = selectedGUID
@@ -123,60 +145,35 @@ function spawnObjs(selection,selectedCartridgeObj)
 
 end
 
+function spawnObjsFromCartridge(cartridgeObj)
+    Wait.frames(function()
+      local cartridgeObjs = cartridgeObj.getObjects()
 
+      for i, loadedObj in pairs(cartridgeObjs) do
+          takenObj = cartridgeObj.takeObject({
+              position       = {-10+(i*0.5),-10,0},
+              callback       = "placeObjectDelay",
+              callback_owner = self,
+              smooth         = false
+          })
+      end
+      
+      local deploymentZone = cartridgeObj.getTable("deploymentZone")
+      if deploymentZone != nil then
+          spawnDeploymentBoundary(deploymentZone)
+      end
 
-function spawnFromCartridgeDelay(spawnFromCartridgeObj)
-
-    spawnFromCartridgeObj.setLock(true)
-
-    local timerCounter = Global.getVar("timerCounter")
-    timerCounter = timerCounter + 1
-    Global.setVar("timerCounter", timerCounter)
-
-    Timer.create({
-        identifier     = "spawnObjsFromCartridgeDelay"..timerCounter,
-        function_name  = "spawnObjsFromCartridge",
-        function_owner = self,
-        parameters     = {spawnFromCartridgeObj},
-        delay          = 0.1
-    })
-end
-
-function spawnObjsFromCartridge(selectedCartridgeTable)
-    local cartridgeObj = selectedCartridgeTable[1]
-
-    local cartridgeObjs = cartridgeObj.getObjects()
-
-    for i, loadedObj in pairs(cartridgeObjs) do
-        takenObj = cartridgeObj.takeObject({
-            position       = {-10+(i*0.5),-10,0},
-            callback       = "placeObjectDelay",
-            callback_owner = self,
-            smooth         = false
-        })
-    end
-
-    destroyObject(cartridgeObj)
+      destroyObject(cartridgeObj)
+    end)
 end
 
 function placeObjectDelay(passedObj)
-    local timerCounter = Global.getVar("timerCounter")
-    timerCounter = timerCounter + 1
-    Global.setVar("timerCounter", timerCounter)
-
-    Timer.create({
-        identifier     = "placeObjectDelay"..timerCounter,
-        function_name  = "placeObject",
-        function_owner = self,
-        parameters     = {passedObj},
-        delay          = 0.1
-    })
+  Wait.frames(function()
+    placeObject(passedObj)
+  end)
 end
 
-
-function placeObject(pObj)
-    local paObj = pObj[1]
-
+function placeObject(paObj)
     spawnPos = paObj.getTable("position")
     paObj.setPosition(spawnPos)
 
@@ -184,35 +181,59 @@ function placeObject(pObj)
     paObj.setRotation(spawnRot)
 
     if paObj.getName() == "Deployment Boundary" then
-        paObj.setLuaScript("interactable = false")
-    else
+        paObj.setLuaScript("function onLoad() self.interactable = false end")
+    elseif paObj.getName() == "Condition Token" then
+        paObj.setLuaScript(conditionTokenScript)
+    elseif paObj.getName() == "Objective Token" then
+        paObj.setLuaScript(objectiveTokenScript)
+    elseif paObj.getVar("scripted") != true then
         paObj.setLuaScript("")
     end
 
-    if paObj.getCustomObject().type == 1 then
-        --paObj.setColorTint(gameData.getTable("battlefieldTint"))
+    paObj.reload()
+end
+
+function spawnDeploymentBoundary(matrix)
+    local bAsset = "http://cloud-3.steamusercontent.com/ugc/1738926104368207752/531BBEE87D18C75A19503307A1A07EA9D0E0438A/"
+    local rAsset = "http://cloud-3.steamusercontent.com/ugc/1738926104368206955/F087A123F300047E9737292752DE512E10641E3B/"
+    local xStart = -25
+    local zStart = 15
+    local yValue = 20
+    -- matrix is in the format of
+    -- { x, x, x, x, x, x, x, x, x, x, x, x }
+    -- { x, x, x, x, x, x, x, x, x, x, x, x }
+    -- { x, x, x, x, x, x, x, x, x, x, x, x }
+    -- { x, x, x, x, x, x, x, x, x, x, x, x }
+    -- { x, x, x, x, x, x, x, x, x, x, x, x }
+    -- { x, x, x, x, x, x, x, x, x, x, x, x }
+    -- ... where "x" can either be:
+    -- "r" :  red deployment zone
+    -- "b" :  blue deployment zone
+    -- ""  :  ignore
+    for z, row in pairs(matrix) do
+      for x, cell in pairs(row) do
+        if cell == "r" or cell == "b" then
+          local projector = spawnObject({
+            type        = "Custom_AssetBundle",
+            position    = {
+              xStart + (6 * (x - 1)),
+              yValue,
+              zStart - (6 * (z - 1)),
+            },
+            scale       = {0, 0, 0},
+          })
+          local asset = rAsset
+          if cell == "b" then
+            asset = bAsset
+          end
+          projector.setName("Deployment Boundary")
+          projector.setLock(true)
+          projector.setCustomObject({
+            assetbundle = asset,
+          })
+        end
+      end
     end
-
-    refreshTimer()
-    Timer.create({
-        identifier     = "spawnObjDebug"..timerCounter,
-        function_name  = "spawnObjDebug",
-        function_owner = self,
-        parameters     = {paObj},
-        delay          = 2
-    })
-
-
-end
-
-function spawnObjDebug(objTable)
-    --objTable[1].reload()
-end
-
-function refreshTimer()
-    timerCounter = Global.getVar("timerCounter")
-    timerCounter = timerCounter + 1
-    Global.setVar("timerCounter", timerCounter)
 end
 
 function clearDeploymentBoundary()

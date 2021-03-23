@@ -3,7 +3,7 @@
     "GUID": "c9f9d0",
     "Name": "Custom_Model_Bag",
     "Transform": {
-      "posX": -38.5355377,
+      "posX": -41.2855377,
       "posY": 1.22417128,
       "posZ": 18.5214577,
       "rotX": 0.00175188773,
@@ -17,8 +17,8 @@
     "Description": "",
     "GMNotes": "",
     "ColorDiffuse": {
-      "r": 0.2549002,
-      "g": 0.34509626,
+      "r": 0.2548994,
+      "g": 0.345095515,
       "b": 0.4470588
     },
     "LayoutGroupSortIndex": 0,
